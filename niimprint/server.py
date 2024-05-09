@@ -38,3 +38,10 @@ async def info_handler():
         "printer_info": printer_info,
         "state_info": state_info
     }
+
+
+def send_heartbeat():
+    transport = SerialTransport(port="/dev/ttyACM0")
+    printer = PrinterClient(transport)
+    res = printer.heartbeat()
+    print('Sent heartbeat', res)

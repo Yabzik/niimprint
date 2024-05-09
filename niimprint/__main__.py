@@ -8,6 +8,7 @@ from niimprint import BluetoothTransport, PrinterClient, SerialTransport
 
 import uvicorn
 import niimprint.server
+from apscheduler.schedulers.background import BackgroundScheduler
 
 @click.group()
 def cli():
@@ -145,6 +146,10 @@ def server_cmd(model, conn, addr, host, port, verbose):
         level="DEBUG" if verbose else "INFO",
         format="%(levelname)s | %(module)s:%(funcName)s:%(lineno)d - %(message)s",
     )
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(niimprint.server.send_heartbeat, 'interval', seconds=60)
+    scheduler.start()
+
     uvicorn.run("niimprint.server:app", host=host, port=port, log_level="info")
 
 if __name__ == "__main__":
