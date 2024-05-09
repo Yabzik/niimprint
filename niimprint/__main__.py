@@ -7,7 +7,7 @@ from PIL import Image
 from niimprint import BluetoothTransport, PrinterClient, SerialTransport
 
 import uvicorn
-import server
+import niimprint.server
 
 @click.group()
 def cli():
@@ -145,7 +145,7 @@ def server_cmd(model, conn, addr, host, port, verbose):
         level="DEBUG" if verbose else "INFO",
         format="%(levelname)s | %(module)s:%(funcName)s:%(lineno)d - %(message)s",
     )
-    uvicorn.run("server:app", host=host, port=port, log_level="info")
+    uvicorn.run("niimprint.server:app", host=host, port=port, log_level="info")
 
 if __name__ == "__main__":
     cli()
