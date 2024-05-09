@@ -6,8 +6,14 @@ from PIL import Image
 
 from niimprint import BluetoothTransport, PrinterClient, SerialTransport
 
+import uvicorn
+import server
 
-@click.command("print")
+@click.group()
+def cli():
+    pass
+
+@cli.command("print")
 @click.option(
     "-m",
     "--model",
@@ -91,6 +97,55 @@ def print_cmd(model, conn, addr, density, rotate, image, verbose):
     printer = PrinterClient(transport)
     printer.print_image(image, density=density)
 
+@cli.command('server')
+@click.option(
+    "-m",
+    "--model",
+    type=click.Choice(["b1", "b18", "b21", "d11", "d110"], False),
+    default="b21",
+    show_default=True,
+    help="Niimbot printer model",
+)
+@click.option(
+    "-c",
+    "--conn",
+    type=click.Choice(["usb", "bluetooth"]),
+    default="usb",
+    show_default=True,
+    help="Connection type",
+)
+@click.option(
+    "-a",
+    "--addr",
+    help="Bluetooth MAC address OR serial device path",
+)
+@click.option(
+    "-h",
+    "--host",
+    default="0.0.0.0",
+    show_default=True,
+    help="Web server host"
+)
+@click.option(
+    "-p",
+    "--port",
+    type=click.IntRange(0, 65535),
+    default="8080",
+    show_default=True,
+    help="Web server host"
+)
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    help="Enable verbose logging",
+)
+def server_cmd(model, conn, addr, host, port, verbose):
+    logging.basicConfig(
+        level="DEBUG" if verbose else "INFO",
+        format="%(levelname)s | %(module)s:%(funcName)s:%(lineno)d - %(message)s",
+    )
+    uvicorn.run("server:app", host=host, port=port, log_level="info")
 
 if __name__ == "__main__":
-    print_cmd()
+    cli()
