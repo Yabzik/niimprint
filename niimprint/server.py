@@ -7,6 +7,8 @@ app = FastAPI()
 from niimprint import BluetoothTransport, PrinterClient, SerialTransport
 from niimprint.printer import InfoEnum
 
+from PIL import Image
+
 @app.post("/print")
 async def print_handler(
     density: Annotated[int, Form()],
@@ -17,6 +19,16 @@ async def print_handler(
         return JSONResponse(status_code=400, content={"message": "Density must be in range 1-5"})
     if rotate not in [0, 90, 180, 270]:
         return JSONResponse(status_code=400, content={"message": "Rotate must be 0, 90, 180, or 270"})
+
+    image = Image.open(image)
+    if rotate != "0":
+        # PIL library rotates counter clockwise, so we need to multiply by -1
+        image = image.rotate(-int(rotate), expand=True)
+    assert image.width <= 384, "Image width too big"
+
+    transport = SerialTransport(port="/dev/ttyACM0")
+    printer = PrinterClient(transport)
+    printer.print_image(image, density=density)
 
     return {"density": density, "rotate": rotate, "image_size": image.size}
 
