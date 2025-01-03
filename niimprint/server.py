@@ -8,6 +8,7 @@ from niimprint import BluetoothTransport, PrinterClient, SerialTransport
 from niimprint.printer import InfoEnum
 
 from PIL import Image
+import io
 
 @app.post("/print")
 async def print_handler(
@@ -20,15 +21,15 @@ async def print_handler(
     if rotate not in [0, 90, 180, 270]:
         return JSONResponse(status_code=400, content={"message": "Rotate must be 0, 90, 180, or 270"})
 
-    image = Image.open(image)
+    pil_image = Image.open(io.BytesIO(image.file.read()))
     if rotate != "0":
         # PIL library rotates counter clockwise, so we need to multiply by -1
-        image = image.rotate(-int(rotate), expand=True)
-    assert image.width <= 384, "Image width too big"
+        pil_image = pil_image.rotate(-int(rotate), expand=True)
+    assert pil_image.width <= 384, "Image width too big"
 
     transport = SerialTransport(port="/dev/ttyACM0")
     printer = PrinterClient(transport)
-    printer.print_image(image, density=density)
+    printer.print_image(pil_image, density=density)
 
     return {"density": density, "rotate": rotate, "image_size": image.size}
 
