@@ -130,6 +130,7 @@ def print_cmd(model, conn, addr, density, rotate, image, verbose):
 @click.option(
     "-p",
     "--port",
+    "http_port_",
     type=click.IntRange(0, 65535),
     default="8080",
     show_default=True,
@@ -141,7 +142,7 @@ def print_cmd(model, conn, addr, density, rotate, image, verbose):
     is_flag=True,
     help="Enable verbose logging",
 )
-def server_cmd(model, conn, addr, host, port, verbose):
+def server_cmd(model, conn, addr, host, http_port_, verbose):
     logging.basicConfig(
         level="DEBUG" if verbose else "INFO",
         format="%(levelname)s | %(module)s:%(funcName)s:%(lineno)d - %(message)s",
@@ -176,7 +177,7 @@ def server_cmd(model, conn, addr, host, port, verbose):
     app.state.max_width_px = max_width_px
     app.state.max_density = max_density
 
-    uvicorn.run("niimprint.server:app", host=host, port=port, log_level="info")
+    uvicorn.run("niimprint.server:app", host=host, port=http_port_, log_level="info")
 
 if __name__ == "__main__":
     cli()
