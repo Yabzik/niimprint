@@ -146,9 +146,35 @@ def server_cmd(model, conn, addr, host, port, verbose):
         level="DEBUG" if verbose else "INFO",
         format="%(levelname)s | %(module)s:%(funcName)s:%(lineno)d - %(message)s",
     )
+    
+    if conn == "bluetooth":
+        assert conn is not None, "--addr argument required for bluetooth connection"
+        addr = addr.upper()
+        assert re.fullmatch(r"([0-9A-F]{2}:){5}([0-9A-F]{2})", addr), "Bad MAC address"
+        transport = BluetoothTransport(addr)
+    if conn == "usb":
+        port = addr if addr is not None else "auto"
+        transport = SerialTransport(port=port)
+
+    if model in ("b1", "b18", "b21"):
+        max_width_px = 384
+    if model in ("d11", "d110"):
+        max_width_px = 96
+
+    if model in ("b18", "d11", "d110"):
+        max_density = 3
+    else:
+        max_density = 5
+    
     scheduler = BackgroundScheduler()
     scheduler.add_job(niimprint.server.send_heartbeat, 'interval', seconds=60)
     scheduler.start()
+
+    from niimprint.server import app
+
+    app.state.transport = transport
+    app.state.max_width_px = max_width_px
+    app.state.max_density = max_density
 
     uvicorn.run("niimprint.server:app", host=host, port=port, log_level="info")
 

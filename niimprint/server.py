@@ -16,45 +16,63 @@ async def print_handler(
     rotate: Annotated[int, Form()],
     image: Annotated[UploadFile, File()]
 ):
-    if density < 1 or density > 5:
-        return JSONResponse(status_code=400, content={"message": "Density must be in range 1-5"})
+    if density < 1 or density > app.state.max_density:
+        return JSONResponse(
+            status_code=400,
+            content={"message": f"Density must be in range 1-{app.state.max_density}"}
+        )
     if rotate not in [0, 90, 180, 270]:
-        return JSONResponse(status_code=400, content={"message": "Rotate must be 0, 90, 180, or 270"})
+        return JSONResponse(
+            status_code=400,
+            content={"message": "Rotate must be 0, 90, 180, or 270"}
+        )
 
     pil_image = Image.open(io.BytesIO(image.file.read()))
     if rotate != "0":
         # PIL library rotates counter clockwise, so we need to multiply by -1
         pil_image = pil_image.rotate(-int(rotate), expand=True)
-    assert pil_image.width <= 384, "Image width too big"
 
-    transport = SerialTransport(port="/dev/ttyACM0")
-    printer = PrinterClient(transport)
-    printer.print_image(pil_image, density=density)
+    if pil_image.width > app.state.max_width_px:
+        return JSONResponse(
+            status_code=400,
+            content={"message": f"Image width too big (max is {app.state.max_width_px})"}
+        )
 
-    return {"density": density, "rotate": rotate, "image_size": image.size}
-
+    printer = PrinterClient(app.state.transport)
+    try:
+        printer.print_image(pil_image, density=density)
+        return {"density": density, "rotate": rotate, "image_size": image.size}
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"message": "Failed to print"}
+        )
 
 @app.get('/info')
 async def info_handler():
-    transport = SerialTransport(port="/dev/ttyACM0")
-    printer = PrinterClient(transport)
+    printer = PrinterClient(app.state.transport)
 
-    rfid_info = printer.get_rfid()
-    state_info = printer.heartbeat()
-    printer_info = {
-        "serial": printer.get_info(InfoEnum.DEVICESERIAL),
-        "soft_version": printer.get_info(InfoEnum.SOFTVERSION),
-        "hard_version": printer.get_info(InfoEnum.HARDVERSION)
-    }
-    return {
-        "stickers": rfid_info,
-        "printer_info": printer_info,
-        "state_info": state_info
-    }
+    try:
+        rfid_info = printer.get_rfid()
+        state_info = printer.heartbeat()
+        printer_info = {
+            "serial": printer.get_info(InfoEnum.DEVICESERIAL),
+            "soft_version": printer.get_info(InfoEnum.SOFTVERSION),
+            "hard_version": printer.get_info(InfoEnum.HARDVERSION)
+        }
+        return {
+            "stickers": rfid_info,
+            "printer_info": printer_info,
+            "state_info": state_info
+        }
+    except Exception:
+        return JSONResponse(
+            status_code=500,
+            content={"message": "Failed to fetch info"}
+        )
 
 
 def send_heartbeat():
-    transport = SerialTransport(port="/dev/ttyACM0")
-    printer = PrinterClient(transport)
+    printer = PrinterClient(app.state.transport)
     res = printer.heartbeat()
     print('Sent heartbeat', res)
