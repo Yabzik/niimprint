@@ -123,7 +123,7 @@ def print_cmd(model, conn, addr, density, rotate, image, verbose):
 @click.option(
     "-h",
     "--host",
-    default="0.0.0.0",
+    default="127.0.0.1",
     show_default=True,
     help="Web server host"
 )
