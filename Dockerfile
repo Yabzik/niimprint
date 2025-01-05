@@ -1,20 +1,15 @@
 FROM python:3.11-slim
 
-ENV POETRY_VERSION=2.0.0
-ENV POETRY_HOME=/opt/poetry
-ENV POETRY_VENV=/opt/poetry-venv
-ENV POETRY_CACHE_DIR=/opt/.cache
 
-RUN python3 -m venv $POETRY_VENV \
-	&& $POETRY_VENV/bin/pip install -U pip setuptools \
-	&& $POETRY_VENV/bin/pip install poetry==${POETRY_VERSION}
+RUN pip install poetry==1.8.5
 
-ENV PATH="${PATH}:${POETRY_VENV}/bin"
+ENV POETRY_CACHE_DIR=/tmp/poetry_cache
+ENV POETRY_VIRTUALENVS_PATH=/opt/venv
 
 WORKDIR /app
 
 COPY poetry.lock pyproject.toml ./
-RUN poetry install --no-root
+RUN poetry install --no-root && rm -rf $POETRY_CACHE_DIR
 
 COPY . /app
 
