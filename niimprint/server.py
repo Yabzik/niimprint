@@ -1,6 +1,6 @@
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import JSONResponse
-from typing import Annotated
+from typing import Annotated, Optional
 
 app = FastAPI()
 
@@ -14,7 +14,8 @@ import io
 async def print_handler(
     density: Annotated[int, Form()],
     rotate: Annotated[int, Form()],
-    image: Annotated[UploadFile, File()]
+    image: Annotated[UploadFile, File()],
+    labeltype: Optional[int] = Form(None)
 ):
     if density < 1 or density > app.state.max_density:
         return JSONResponse(
@@ -25,6 +26,13 @@ async def print_handler(
         return JSONResponse(
             status_code=400,
             content={"message": "Rotate must be 0, 90, 180, or 270"}
+        )
+    if labeltype is None:
+        labeltype = 1
+    if labeltype < 1 or labeltype > 11:
+        return JSONResponse(
+            status_code=400,
+            content={"message": "Label type must be in range 1-11"}
         )
 
     pil_image = Image.open(io.BytesIO(image.file.read()))

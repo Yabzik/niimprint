@@ -100,9 +100,9 @@ class PrinterClient:
         self._transport = transport
         self._packetbuf = bytearray()
 
-    def print_image(self, image: Image, density: int = 3):
+    def print_image(self, image: Image, density: int = 3, labeltype: int = 1):
         self.set_label_density(density)
-        self.set_label_type(1)
+        self.set_label_type(labeltype)
         self.start_print()
         # self.allow_print_clear()  # Something unsupported in protocol decoding (B21)
         self.start_page_print()
@@ -243,7 +243,7 @@ class PrinterClient:
         }
 
     def set_label_type(self, n):
-        assert 1 <= n <= 3
+        assert 1 <= n <= 11
         packet = self._transceive(RequestCodeEnum.SET_LABEL_TYPE, bytes((n,)), 16)
         return bool(packet.data[0])
 
