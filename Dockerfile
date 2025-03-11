@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-RUN apt update && apt install bluez
+# RUN apt update && apt install bluez
 
 RUN pip install poetry==1.8.5
 
