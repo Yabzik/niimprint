@@ -10,6 +10,14 @@ from niimprint.printer import InfoEnum
 from PIL import Image
 import io
 
+
+def get_transport():
+    if app.state.transport_type == "bluetooth":
+        return BluetoothTransport(app.state.transport_port)
+    elif app.state.transport_type == "usb":
+        return SerialTransport(port=app.state.transport_port)
+
+
 @app.post("/print")
 async def print_handler(
     density: Annotated[int, Form()],
@@ -46,7 +54,7 @@ async def print_handler(
             content={"message": f"Image width too big (max is {app.state.max_width_px})"}
         )
 
-    printer = PrinterClient(app.state.transport)
+    printer = PrinterClient(get_transport())
     try:
         printer.print_image(pil_image, density=density)
         return {"density": density, "rotate": rotate, "image_size": image.size}
@@ -58,7 +66,7 @@ async def print_handler(
 
 @app.get('/info')
 async def info_handler():
-    printer = PrinterClient(app.state.transport)
+    printer = PrinterClient(get_transport())
 
     try:
         rfid_info = printer.get_rfid()
@@ -81,6 +89,6 @@ async def info_handler():
 
 
 def send_heartbeat():
-    printer = PrinterClient(app.state.transport)
+    printer = PrinterClient(get_transport())
     res = printer.heartbeat()
     print('Sent heartbeat', res)

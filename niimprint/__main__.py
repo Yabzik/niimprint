@@ -152,10 +152,12 @@ def server_cmd(model, conn, addr, host, http_port_, verbose):
         assert conn is not None, "--addr argument required for bluetooth connection"
         addr = addr.upper()
         assert re.fullmatch(r"([0-9A-F]{2}:){5}([0-9A-F]{2})", addr), "Bad MAC address"
-        transport = BluetoothTransport(addr)
+        transport_port = addr
+        # transport = BluetoothTransport(addr)
     if conn == "usb":
         port = addr if addr is not None else "auto"
-        transport = SerialTransport(port=port)
+        transport_port = port
+        # transport = SerialTransport(port=port)
 
     if model in ("b1", "b18", "b21"):
         max_width_px = 384
@@ -173,7 +175,8 @@ def server_cmd(model, conn, addr, host, http_port_, verbose):
 
     from niimprint.server import app
 
-    app.state.transport = transport
+    app.state.transport_type = conn
+    app.state.transport_port = transport_port
     app.state.max_width_px = max_width_px
     app.state.max_density = max_density
 
